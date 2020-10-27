@@ -1,3 +1,5 @@
+#ifdef REF
+
 #include "BTREE.h"
 #include <stdio.h>
 #include <malloc.h>
@@ -565,3 +567,5 @@ int main()
     Test2();
     return 0;
 }
+
+#endif

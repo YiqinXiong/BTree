@@ -1,7 +1,10 @@
-#include "BTREE.h"
+#include "BTree.hpp"
 #include <stdio.h>
 #include <malloc.h>
 #include <stdlib.h>
+#include <queue>
+
+using namespace std;
 
 // 初始化B树
 Status InitBTree(BTree &t)
@@ -15,9 +18,11 @@ Status InitBTree(BTree &t)
 // 找到对应key则i就是key的下标，没找到对应key则i就是继续向下查找的指针的下标
 int SearchBTNode(BTNode *p, KeyType k)
 {
-    int i;
-    for (i = 0; i < p->keynum && k >= p->key[i + 1]; i++)
-        ;
+    int i = 0;
+    while (i < p->keynum && k >= p->key[i + 1])
+    {
+        i++;
+    }
     return i;
 }
 
@@ -29,258 +34,154 @@ Result SearchBTree(BTree t, KeyType k)
     // 初始化，p指向待查节点，q指向p的双亲
     BTNode *p = t;
     BTNode *q = nullptr;
-    int found = FALSE;
-    int i=0;
+    bool found = false;
+    int i = 0;
     //while循环查找过程，条件1：p非空（没到叶子节点），条件2：还没找到
-    while(p)
-}
-
-// 将关键字k和结点q分别插入到p->key[i+1]和p->ptr[i+1]中
-void InsertBTNode(BTNode *&p, int i, KeyType k, BTNode *q);
-
-// 将结点p分裂成两个结点,前一半保留,后一半移入结点q
-void SplitBTNode(BTNode *&p, BTNode *&q);
-
-// 生成新的根结点t,原结点p和结点q为子树指针
-void NewRoot(BTNode *&t, KeyType k, BTNode *p, BTNode *q);
-
-/* 在树t上结点q的key[i]与key[i+1]之间插入关键字k。
-若引起结点过大,则沿双亲链进行必要的结点分裂调整,使t仍是B树 */
-void InsertBTree(BTree &t, int i, KeyType k, BTNode *p);
-
-// 从p结点删除key[i]和它的孩子指针ptr[i]
-void Remove(BTNode *p, int i);
-
-// 查找被删关键字p->key[i](在非叶子结点中)的替代叶子结点(右子树中值最小的关键字)
-void Substitution(BTNode *p, int i);
-
-/* 将双亲结点p中的最后一个关键字移入右结点q中，
-将左结点aq中的最后一个关键字移入双亲结点p中 */
-void MoveRight(BTNode *p, int i);
-
-/* 将双亲结点p中的第一个关键字移入结点aq中，
-将结点q中的第一个关键字移入双亲结点p中 */
-void MoveLeft(BTNode *p, int i);
-
-/* 将双亲结点p、右结点q合并入左结点aq，
-并调整双亲结点p中的剩余关键字的位置 */
-void Combine(BTNode *p, int i);
-
-// 删除结点p中的第i个关键字后,调整B树
-void AdjustBTree(BTNode *p, int i);
-
-// 反映是否在结点p中是否查找到关键字k
-int FindBTNode(BTNode *p, KeyType k, int &i);
-
-// 在结点p中查找并删除关键字k
-int BTNodeDelete(BTNode *p, KeyType k);
-
-// 构建删除框架，执行删除操作
-void BTreeDelete(BTree &t, KeyType k);
-
-// 递归释放B树
-void DestroyBTree(BTree &t);
-
-// 初始化队列
-Status InitQueue(LinkList &L);
-
-// 新建一个结点
-LNode *CreateNode(BTree t);
-
-// 元素q入队列
-Status Enqueue(LNode *p, BTree t);
-
-// 出队列，并以q返回值
-Status Dequeue(LNode *p, BTNode *&q);
-
-// 队列判空
-Status IfEmpty(LinkList L);
-
-// 销毁队列
-void DestroyQueue(LinkList L);
-
-// 用队列遍历输出B树
-Status Traverse(BTree t, LinkList L, int newline, int sum);
-
-// 输出B树
-Status PrintBTree(BTree t);
-
-// 测试B树功能函数
-void Test();
-
-/*------------------------------------------------------------------------*/
-
-Status InitBTree(BTree &t)
-{
-    //初始化B树
-    t = NULL;
-    return OK;
-}
-
-int SearchBTNode(BTNode *p, KeyType k)
-{
-    //在结点p中查找关键字k的插入位置i
-    int i = 0;
-    for (i = 0; i < p->keynum && p->key[i + 1] <= k; i++)
-        ;
-    return i;
-}
-
-Result SearchBTree(BTree t, KeyType k)
-{
-    /*在树t上查找关键字k,返回结果(pt,i,tag)。若查找成功,则特征值
-tag=1,关键字k是指针pt所指结点中第i个关键字；否则特征值tag=0,
-关键字k的插入位置为pt结点的第i个*/
-
-    BTNode *p = t, *q = NULL; //初始化结点p和结点q,p指向待查结点,q指向p的双亲
-    int found_tag = 0;        //设定查找成功与否标志
-    int i = 0;
-    Result r; //设定返回的查找结果
-
-    while (p != NULL && found_tag == 0)
+    while (p && !found)
     {
-        i = SearchBTNode(p, k);      //在结点p中查找关键字k,使得p->key[i]<=k<p->key[i+1]
-        if (i > 0 && p->key[i] == k) //找到待查关键字
-            found_tag = 1;           //查找成功
+        i = SearchBTNode(p, k);
+        if (i > 0 && p->key[i] == k)
+        {
+            found = true;
+        }
         else
-        { //查找失败
+        {
             q = p;
             p = p->ptr[i];
+            found = false;
         }
     }
-
-    if (found_tag == 1)
-    { //查找成功
-        r.pt = p;
-        r.i = i;
-        r.tag = 1;
+    if (found)
+    {
+        return Result(p, i, 1); // 查找成功，返回其在B树中位置
     }
     else
-    { //查找失败
-        r.pt = q;
-        r.i = i;
-        r.tag = 0;
+    {
+        return Result(q, i, 0); // 查找不成功，返回其插入位置
     }
-
-    return r; //返回关键字k的位置(或插入位置)
 }
 
+/*--------------------------------------------------------------------*/
+
+// 将关键字k和结点q分别插入到p->key[i+1]和p->ptr[i+1]中
 void InsertBTNode(BTNode *&p, int i, KeyType k, BTNode *q)
 {
-    //将关键字k和结点q分别插入到p->key[i+1]和p->ptr[i+1]中
+    // i+1之后（包括原i+1）整体后移，空出位置i+1
     int j;
     for (j = p->keynum; j > i; j--)
-    { //整体后移空出一个位置
+    {
         p->key[j + 1] = p->key[j];
         p->ptr[j + 1] = p->ptr[j];
     }
+    // 插入k和q
     p->key[i + 1] = k;
     p->ptr[i + 1] = q;
-    if (q != NULL)
+    if (q != nullptr)
         q->parent = p;
     p->keynum++;
 }
 
-void SplitBTNode(BTNode *&p, BTNode *&q)
+// 将插入新节点后的节点p（含有m个key，已经节点过大）分裂成两个结点，并返回分裂点x
+KeyType SplitBTNode(BTNode *&p, BTNode *&q)
 {
-    //将结点p分裂成两个结点,前一半保留,后一半移入结点q
-    int i;
     int s = (m + 1) / 2;
-    q = (BTNode *)malloc(sizeof(BTNode)); //给结点q分配空间
-
-    q->ptr[0] = p->ptr[s]; //后一半移入结点q
-    for (i = s + 1; i <= m; i++)
+    q = new BTNode;        //新建节点q
+    q->ptr[0] = p->ptr[s]; //后一半移入节点q
+    for (int i = s + 1; i <= m; i++)
     {
         q->key[i - s] = p->key[i];
         q->ptr[i - s] = p->ptr[i];
+        q->recptr[i - s] = p->recptr[i];
     }
-    q->keynum = p->keynum - s;
+    q->keynum = p->keynum - s; //节点q存放m-s个
     q->parent = p->parent;
-    for (i = 0; i <= p->keynum - s; i++) //修改双亲指针
-        if (q->ptr[i] != NULL)
+    //转移到节点q之后，修改双亲指针
+    for (int i = 0; i <= q->keynum; i++)
+    {
+        if (q->ptr[i] != nullptr)
             q->ptr[i]->parent = q;
-    p->keynum = s - 1; //结点p的前一半保留,修改结点p的keynum
+    }
+    p->keynum = s - 1; //节点p存放s个，但保留s-1个，p中最后一个key作为分裂点x
+    return p->key[s];
 }
 
-void NewRoot(BTNode *&t, KeyType k, BTNode *p, BTNode *q)
+// 生成新的根结点t,原结点p和结点q为子树指针
+void NewRoot(BTree &t, KeyType k, BTNode *p, BTNode *q)
 {
-    //生成新的根结点t,原p和q为子树指针
-    t = (BTNode *)malloc(sizeof(BTNode)); //分配空间
+    t = new BTNode;
     t->keynum = 1;
     t->ptr[0] = p;
     t->ptr[1] = q;
     t->key[1] = k;
-    if (p != NULL) //调整结点p和结点q的双亲指针
+    // 调整结点p和结点q的双亲指针
+    if (p != nullptr)
         p->parent = t;
-    if (q != NULL)
+    if (q != nullptr)
         q->parent = t;
-    t->parent = NULL;
+    t->parent = nullptr;
 }
 
-void InsertBTree(BTree &t, int i, KeyType k, BTNode *p)
+/* 在树t上结点p的key[i]与key[i+1]之间插入关键字k。
+若引起结点过大,则沿双亲链进行必要的结点分裂调整,使t仍是B树 */
+Status InsertBTree(BTree &t, int i, KeyType k, BTNode *p)
 {
-    /*在树t上结点q的key[i]与key[i+1]之间插入关键字k。若引起
-结点过大,则沿双亲链进行必要的结点分裂调整,使t仍是B树*/
-    BTNode *q;
-    int finish_tag, newroot_tag, s; //设定需要新结点标志和插入完成标志
-    KeyType x;
-    if (p == NULL)                 //t是空树
-        NewRoot(t, k, NULL, NULL); //生成仅含关键字k的根结点t
-    else
+    bool finished = false;
+    BTNode *q = nullptr;
+    KeyType x = k;
+    while (p && !finished)
     {
-        x = k;
-        q = NULL;
-        finish_tag = 0;
-        newroot_tag = 0;
-        while (finish_tag == 0 && newroot_tag == 0)
+        InsertBTNode(p, i, x, q);
+        if (p->keynum < m)
+            finished = true;
+        else
         {
-            InsertBTNode(p, i, x, q); //将关键字x和结点q分别插入到p->key[i+1]和p->ptr[i+1]
-            if (p->keynum <= keyNumMax)
-                finish_tag = 1; //插入完成
-            else
+            x = SplitBTNode(p, q);
+            //若p的双亲存在，在双亲节点中找x的插入位置
+            p = p->parent;
+            if (p)
             {
-                s = (m + 1) / 2;
-                SplitBTNode(p, q); //分裂结点
-                x = p->key[s];
-                if (p->parent)
-                { //查找x的插入位置
-                    p = p->parent;
-                    i = SearchBTNode(p, x);
-                }
-                else //没找到x，需要新结点
-                    newroot_tag = 1;
+                i = SearchBTNode(p, x);
             }
         }
-        if (newroot_tag == 1)    //根结点已分裂为结点p和q
-            NewRoot(t, x, p, q); //生成新根结点t,p和q为子树指针
     }
+    //未完成，情况1：t是空树（初始p为nullptr），情况2：根节点分裂为p和q
+    if (!finished)
+    {
+        p = t; //原t即为p
+        NewRoot(t, x, p, q);
+    }
+    return OK;
 }
 
+/*--------------------------------------------------------------------*/
+#ifdef DELETE
+// 从p结点删除key[i]和它的孩子指针ptr[i]
 void Remove(BTNode *p, int i)
 {
-    //从p结点删除key[i]和它的孩子指针ptr[i]
+    // 从i+1位置开始向前移动覆盖
     int j;
     for (j = i + 1; j <= p->keynum; j++)
-    { //前移删除key[i]和ptr[i]
+    {
         p->key[j - 1] = p->key[j];
         p->ptr[j - 1] = p->ptr[j];
     }
     p->keynum--;
 }
 
+// 查找被删关键字p->key[i](在非叶子结点中)的替代叶子结点(右子树中值最小的关键字)
 void Substitution(BTNode *p, int i)
 {
     //查找被删关键字p->key[i](在非叶子结点中)的替代叶子结点(右子树中值最小的关键字)
     BTNode *q;
-    for (q = p->ptr[i]; q->ptr[0] != NULL; q = q->ptr[0])
+    for (q = p->ptr[i]; q->ptr[0] != nullptr; q = q->ptr[0])
         ;
     p->key[i] = q->key[1]; //复制关键字值
 }
 
+/* 将双亲结点p中的最后一个关键字移入右结点q中，
+将左结点aq中的最后一个关键字移入双亲结点p中 */
 void MoveRight(BTNode *p, int i)
 {
-    /*将双亲结点p中的最后一个关键字移入右结点q中
-将左结点aq中的最后一个关键字移入双亲结点p中*/
     int j;
     BTNode *q = p->ptr[i];
     BTNode *aq = p->ptr[i - 1];
@@ -300,10 +201,10 @@ void MoveRight(BTNode *p, int i)
     aq->keynum--;
 }
 
+/* 将双亲结点p中的第一个关键字移入结点aq中，
+将结点q中的第一个关键字移入双亲结点p中 */
 void MoveLeft(BTNode *p, int i)
 {
-    /*将双亲结点p中的第一个关键字移入左结点aq中，
-将右结点q中的第一个关键字移入双亲结点p中*/
     int j;
     BTNode *aq = p->ptr[i - 1];
     BTNode *q = p->ptr[i];
@@ -323,10 +224,10 @@ void MoveLeft(BTNode *p, int i)
     }
 }
 
+/* 将双亲结点p、右结点q合并入左结点aq，
+并调整双亲结点p中的剩余关键字的位置 */
 void Combine(BTNode *p, int i)
 {
-    /*将双亲结点p、右结点q合并入左结点aq，
-并调整双亲结点p中的剩余关键字的位置*/
     int j;
     BTNode *q = p->ptr[i];
     BTNode *aq = p->ptr[i - 1];
@@ -348,12 +249,12 @@ void Combine(BTNode *p, int i)
         p->ptr[j] = p->ptr[j + 1];
     }
     p->keynum--; //修改双亲结点p的keynum值
-    free(q);     //释放空右结点q的空间
+    delete q;    //释放空右结点q的空间
 }
 
+// 删除结点p中的第i个关键字后,调整B树
 void AdjustBTree(BTNode *p, int i)
 {
-    //删除结点p中的第i个关键字后,调整B树
     if (i == 0)                            //删除的是最左边关键字
         if (p->ptr[1]->keynum > keyNumMin) //右结点可以借
             MoveLeft(p, 1);
@@ -372,9 +273,9 @@ void AdjustBTree(BTNode *p, int i)
         Combine(p, i);
 }
 
+// 反映是否在结点p中是否查找到关键字k
 int FindBTNode(BTNode *p, KeyType k, int &i)
 {
-    //反映是否在结点p中是否查找到关键字k
     if (k < p->key[1])
     { //结点p中查找关键字k失败
         i = 0;
@@ -388,21 +289,22 @@ int FindBTNode(BTNode *p, KeyType k, int &i)
         if (k == p->key[i]) //结点p中查找关键字k成功
             return 1;
     }
+    return 0;
 }
 
+// 在结点p中查找并删除关键字k
 int BTNodeDelete(BTNode *p, KeyType k)
 {
-    //在结点p中查找并删除关键字k
     int i;
     int found_tag; //查找标志
-    if (p == NULL)
+    if (p == nullptr)
         return 0;
     else
     {
         found_tag = FindBTNode(p, k, i); //返回查找结果
         if (found_tag == 1)
         { //查找成功
-            if (p->ptr[i - 1] != NULL)
+            if (p->ptr[i - 1] != nullptr)
             {                                       //删除的是非叶子结点
                 Substitution(p, i);                 //寻找相邻关键字(右子树中最小的关键字)
                 BTNodeDelete(p->ptr[i], p->key[i]); //执行删除操作
@@ -412,163 +314,117 @@ int BTNodeDelete(BTNode *p, KeyType k)
         }
         else
             found_tag = BTNodeDelete(p->ptr[i], k); //沿孩子结点递归查找并删除关键字k
-        if (p->ptr[i] != NULL)
+        if (p->ptr[i] != nullptr)
             if (p->ptr[i]->keynum < keyNumMin) //删除后关键字个数小于MIN
                 AdjustBTree(p, i);             //调整B树
         return found_tag;
     }
 }
 
+// 构建删除框架，执行删除操作
 void BTreeDelete(BTree &t, KeyType k)
 {
-    //构建删除框架，执行删除操作
     BTNode *p;
     int a = BTNodeDelete(t, k); //删除关键字k
     if (a == 0)                 //查找失败
-        printf("   关键字%d不在B树中\n", k);
+        printf("key[%d] is not exist!\n", k);
     else if (t->keynum == 0)
     { //调整
         p = t;
         t = t->ptr[0];
-        free(p);
+        delete p;
     }
 }
 
+// 递归释放B树
 void DestroyBTree(BTree &t)
 {
-    //递归释放B树
     int i;
     BTNode *p = t;
-    if (p != NULL)
+    if (p != nullptr)
     { //B树不为空
         for (i = 0; i <= p->keynum; i++)
         { //递归释放每一个结点
             DestroyBTree(*&p->ptr[i]);
         }
-        free(p);
+        delete p;
     }
-    t = NULL;
+    t = nullptr;
 }
+#endif
+/*--------------------------------------------------------------------*/
 
-Status InitQueue(LinkList &L)
+// 用队列遍历输出B树
+void LevelTraverse(BTree t)
 {
-    //初始化队列
-    L = (LNode *)malloc(sizeof(LNode)); //分配结点空间
-    if (L == NULL)                      //分配失败
-        return OVERFLOW;
-    L->next = NULL;
-    return OK;
-}
+    queue<BTNode *> que;
+    BTNode *p;
+    int length;
 
-LNode *CreateNode(BTNode *p)
-{
-    //新建一个结点
-    LNode *q;
-    q = (LNode *)malloc(sizeof(LNode)); //分配结点空间
-    if (q != NULL)
-    { //分配成功
-        q->data = p;
-        q->next = NULL;
-    }
-    return q;
-}
-
-Status Enqueue(LNode *p, BTNode *q)
-{
-    //元素q入队列
-    if (p == NULL)
-        return ERROR;
-    while (p->next != NULL) //调至队列最后
-        p = p->next;
-    p->next = CreateNode(q); //生成结点让q进入队列
-    return OK;
-}
-
-Status Dequeue(LNode *p, BTNode *&q)
-{
-    //出队列，并以q返回值
-    LNode *aq;
-    if (p == NULL || p->next == NULL) //删除位置不合理
-        return ERROR;
-    aq = p->next; //修改被删结点aq的指针域
-    p->next = aq->next;
-    q = aq->data;
-    free(aq); //释放结点aq
-    return OK;
-}
-
-Status IfEmpty(LinkList L)
-{
-    //队列判空
-    if (L == NULL) //队列不存在
-        return ERROR;
-    if (L->next == NULL) //队列为空
-        return TRUE;
-    return FALSE; //队列非空
-}
-
-void DestroyQueue(LinkList L)
-{
-    //销毁队列
-    LinkList p;
-    if (L != NULL)
+    que.push(t);
+    while (!que.empty())
     {
-        p = L;
-        L = L->next;
-        free(p); //逐一释放
-        DestroyQueue(L);
-    }
-}
-
-Status Traverse(BTree t, LinkList L, int newline, int sum)
-{
-    //用队列遍历输出B树
-    int i;
-    BTree p;
-    if (t != NULL)
-    {
-        printf("  [ ");
-        Enqueue(L, t->ptr[0]); //入队
-        for (i = 1; i <= t->keynum; i++)
+        length = que.size(); // 获取当前队列长度，用于分层
+        //打印当前层所有节点
+        for (int i = 0; i < length; i++)
         {
-            printf(" %d ", t->key[i]);
-            Enqueue(L, t->ptr[i]); //子结点入队
+            // 弹出头节点作为当前节点
+            p = que.front();
+            que.pop();
+            // 打印当前节点
+            printf("|");
+            for (int j = 1; j <= p->keynum; j++)
+            {
+                printf("%d\t", p->key[j]);
+            }
+            printf("|\t");
+            // 把当前节点的所有非空子节点加入队列
+            for (int j = 0; j <= p->keynum; j++)
+            {
+                if (p->ptr[j] && p->ptr[j]->keynum != 0)
+                    que.push(p->ptr[j]);
+            }
         }
-        sum += t->keynum + 1;
-        printf("]");
-        if (newline == 0)
-        { //需要另起一行
-            printf("\n");
-            newline = sum - 1;
-            sum = 0;
-        }
-        else
-            newline--;
+        printf("\n");
     }
-
-    if (IfEmpty(L) == FALSE)
-    {                                 //l不为空
-        Dequeue(L, p);                //出队，以p返回
-        Traverse(p, L, newline, sum); //遍历出队结点
-    }
-    return OK;
 }
 
+// 输出B树
 Status PrintBTree(BTree t)
 {
-    //输出B树
-    LinkList L;
     if (t == NULL)
     {
-        printf("  B树为空树");
-        return OK;
+        printf("Empty B-Tree!\n");
+        return EMPTY;
     }
-    InitQueue(L);         //初始化队列
-    Traverse(t, L, 0, 0); //利用队列输出
-    DestroyQueue(L);      //销毁队列
+    LevelTraverse(t);
     return OK;
 }
 
+/*--------------------------------------------------------------------*/
+
+// 测试B树功能函数
+void Test()
+{
+    BTNode *t = nullptr;
+    Result s; //设定查找结果
+    int j, n = 15;
+    KeyType k;
+    KeyType a[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+    printf("Create B-Tree(m=%d):\n", m);
+    for (j = 0; j < n; j++)
+    { //逐一插入元素
+        s = SearchBTree(t, a[j]);
+        if (!s.found)
+            InsertBTree(t, s.i, a[j], s.pt);
+        printf("step %d, insert elem[%d]:\n ", j + 1, a[j]);
+        PrintBTree(t);
+    }
+
+    printf("\n");
+}
+
+#ifdef TEST
 void Test1()
 {
     system("color 70");
@@ -666,9 +522,10 @@ void Test2()
         }
     }
 }
+#endif
 
 int main()
 {
-    Test2();
+    Test();
     return 0;
 }
