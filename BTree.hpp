@@ -69,12 +69,12 @@ void Remove(BTNode *p, int i);
 // 参数q：p->key[i]的右子树
 KeyType FindReplace(BTNode *q);
 
-/* 将双亲结点p中的最后一个关键字移入右结点q中，
-将左结点aq中的最后一个关键字移入双亲结点p中 */
+/* 将双亲节点p中的最后一个关键字移入右节点q中，
+将左节点aq中的最后一个关键字移入双亲节点p中 */
 void MoveRight(BTNode *p, int i);
 
-/* 将双亲结点p中的第一个关键字移入结点aq中，
-将结点q中的第一个关键字移入双亲结点p中 */
+/* 将双亲节点p中的第一个关键字移入左节点aq中，
+将右节点q中的第一个关键字移入双亲节点p中 */
 void MoveLeft(BTNode *p, int i);
 
 /* 将双亲结点p、右结点q合并入左结点aq，
