@@ -1,13 +1,13 @@
 #ifndef _BTREE_H
 #define _BTREE_H
-#define m 4 //设定B树的阶数
+#define m 5 //设定B树的阶数
 
 const int keyNumMax = m - 1;       //结点的最大关键字数量
 const int keyNumMin = (m - 1) / 2; //结点的最小关键字数量（m/2取上界-1等同于(m-1)/2取下界）
 typedef int KeyType;               //KeyType为关键字类型
 typedef int Record;                //Record为记录类型
 
-// B树和B树结点类型
+// 结点类型
 // 所有非终端节点中包含(n,A0,K1,A1,K2,A2...,Kn,An)
 // 其中n为关键字个数，Ki为关键字，Ai-1为小于Ki的节点指针，Ai为大于Ki的节点指针
 typedef struct BTNode
@@ -20,7 +20,7 @@ typedef struct BTNode
     BTNode() : keynum(), parent(), key(), ptr(), recptr() {}
 } BTNode, *BTree;
 
-// B树查找结果类型
+// 查找结果类型
 struct Result
 {
     BTNode *pt; //指向找到的结点
@@ -30,21 +30,11 @@ struct Result
     Result(BTNode *pt, int i, bool found) : pt(pt), i(i), found(found) {}
 };
 
-// 链表节点类型
-typedef struct LNode
-{                       //链表和链表结点类型
-    BTree data;         //数据域
-    struct LNode *next; //指针域
-} LNode, *LinkList;
-
-// 枚举类型
+// 状态返回值枚举
 typedef enum
 {
-    TRUE,
-    FALSE,
     OK,
     ERROR,
-    OVERFLOW,
     EMPTY
 } Status;
 
@@ -76,7 +66,8 @@ Status InsertBTree(BTree &t, int i, KeyType k, BTNode *p);
 void Remove(BTNode *p, int i);
 
 // 查找被删关键字p->key[i](在非叶子结点中)的替代叶子结点(右子树中值最小的关键字)
-void Substitution(BTNode *p, int i);
+// 参数q：p->key[i]的右子树
+KeyType FindReplace(BTNode *q);
 
 /* 将双亲结点p中的最后一个关键字移入右结点q中，
 将左结点aq中的最后一个关键字移入双亲结点p中 */
@@ -90,25 +81,25 @@ void MoveLeft(BTNode *p, int i);
 并调整双亲结点p中的剩余关键字的位置 */
 void Combine(BTNode *p, int i);
 
-// 删除结点p中的第i个关键字后,调整B树
+// 删除结点p中的第i个关键字后调整B树
 void AdjustBTree(BTNode *p, int i);
 
-// 反映是否在结点p中是否查找到关键字k
-int FindBTNode(BTNode *p, KeyType k, int &i);
+// 在结点p中找到关键字k
+bool FindBTNode(BTNode *p, KeyType k, int &i);
 
-// 在结点p中查找并删除关键字k
-int BTNodeDelete(BTNode *p, KeyType k);
+// 在结点p中查找并删除关键字k，若无则递归向下查找并删除
+bool BTNodeDelete(BTNode *p, KeyType k);
 
-// 构建删除框架，执行删除操作
+// 删除操作
 void BTreeDelete(BTree &t, KeyType k);
 
 // 递归释放B树
 void DestroyBTree(BTree &t);
 
-// 用队列遍历输出B树
+// 层序遍历
 void LevelTraverse(BTree t);
 
-// 输出B树
+// 打印B树
 Status PrintBTree(BTree t);
 
 // 测试B树功能函数
